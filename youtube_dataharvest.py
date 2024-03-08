@@ -307,7 +307,7 @@ def create_mysql_tables(cursor):
                         "FOREIGN KEY (Video_Id) REFERENCES video (Video_Id) ON DELETE CASCADE )")
 
 # retrieve query result from sql database and save it to a dataframe
-def question_answer(sql, result_columns):
+def question_answer(sql, result_columns, cursor, connection):
 
     cursor.execute(sql)
     connection.commit()
@@ -438,60 +438,60 @@ if __name__ == "__main__":
             sql = ("SELECT video.Video_Name, channel.Channel_Name FROM video INNER JOIN playlist ON video.Playlist_Id = playlist.Playlist_Id "
                    "INNER JOIN channel ON playlist.Channel_id = channel.Channel_Id") 
             result_columns = ["Video Name", "Channel Name"]
-            question_answer(sql, result_columns)
+            question_answer(sql, result_columns, cursor, connection)
 
         with st.expander("2\) Which channels have the most number of videos, and how many videos do they have?"):
             sql = ("SELECT channel.Channel_Name, COUNT(video.Video_Id) AS no_of_videos FROM channel INNER JOIN playlist ON channel.Channel_Id = playlist.Channel_Id "
                    "LEFT JOIN video ON playlist.Playlist_Id = video.Playlist_Id GROUP BY channel.Channel_Name ORDER BY no_of_videos DESC")
             result_columns = ["Channel Name", "Number Of Videos"]
-            question_answer(sql, result_columns)
+            question_answer(sql, result_columns, cursor, connection)
 
         with st.expander("3\) What are the top 10 most viewed videos and their respective channels?"):
             sql = ("SELECT video.Video_Name, video.View_Count, channel.Channel_Name FROM video INNER JOIN playlist ON video.Playlist_Id = playlist.Playlist_Id "
                    "INNER JOIN channel ON playlist.Channel_Id = channel.Channel_Id ORDER BY video.View_Count DESC LIMIT 10")    
             result_columns = ["Video Name", "View Count", "Channel Name"]
-            question_answer(sql, result_columns)
+            question_answer(sql, result_columns, cursor, connection)
 
         with st.expander("4\) How many comments were made on each video, and what are their corresponding video names?"):
             sql = ("SELECT video.Video_Name, COUNT(comment.Comment_Id) AS no_of_comments FROM comment RIGHT JOIN video ON comment.Video_Id = video.Video_Id "
                    "GROUP BY video.Video_Name ORDER BY no_of_comments DESC")      
             result_columns = ["Video Name", "Number Of Comments"]
-            question_answer(sql, result_columns)
+            question_answer(sql, result_columns, cursor, connection)
 
         with st.expander("5\) Which videos have the highest number of likes, and what are their corresponding channel names?"):
             sql = ("SELECT video.Video_Name, video.Like_Count, channel.Channel_Name FROM video INNER JOIN playlist ON video.Playlist_Id = playlist.Playlist_Id "
                    "INNER JOIN channel ON playlist.Channel_Id = channel.Channel_Id ORDER BY video.Like_Count DESC")         
             result_columns = ["Video Name", "Like Count", "Channel Name"]
-            question_answer(sql, result_columns)
+            question_answer(sql, result_columns, cursor, connection)
 
         with st.expander("6\) What is the total number of likes for each video, and what are their corresponding video names?"):
             sql = ("SELECT video.Video_Name, video.Like_Count FROM video ORDER BY video.Like_Count DESC")        
             result_columns = ["Video Name", "Like Count"]
-            question_answer(sql, result_columns)
+            question_answer(sql, result_columns, cursor, connection)
 
         with st.expander("7\) What is the total number of views for each channel, and what are their corresponding channel names?"):
             sql = ("SELECT channel.Channel_Name, COALESCE(sum(video.View_Count), 0) AS Total_Views FROM video RIGHT JOIN playlist ON video.Playlist_Id = playlist.Playlist_Id "
                    "INNER JOIN channel ON playlist.Channel_Id = channel.Channel_Id GROUP BY channel.Channel_Name ORDER BY Total_Views DESC")   
             result_columns = ["Channel Name", "Total Views"]
-            question_answer(sql, result_columns)
+            question_answer(sql, result_columns, cursor, connection)
 
         with st.expander("8\) What are the names of all the channels that have published videos in the year 2022?"):
             sql = ("SELECT channel.Channel_Name, COUNT(video.Video_Id) AS no_of_videos_in_year_2022 FROM video INNER JOIN "
                    "playlist ON video.Playlist_id = playlist.Playlist_Id INNER JOIN channel ON playlist.Channel_Id = channel.Channel_Id "
                    "WHERE YEAR(video.PublishedAt) = 2022 GROUP BY channel.Channel_Name ORDER BY no_of_videos_in_year_2022 DESC")
             result_columns = ["Channel Name", "Number Of Videos In Year 2022"]
-            question_answer(sql, result_columns)
+            question_answer(sql, result_columns, cursor, connection)
 
         with st.expander("9\) What is the average duration of all videos in each channel, and what are their corresponding channel names?"):
             sql = ("SELECT channel.Channel_Name, COALESCE(AVG(video.Duration_In_Seconds), 0) AS Average_Video_Duration_In_Seconds FROM video "
                    "RIGHT JOIN playlist ON video.Playlist_Id = playlist.Playlist_Id INNER JOIN channel ON playlist.Channel_Id = channel.Channel_Id "
                    "GROUP BY channel.Channel_Name ORDER BY Average_Video_Duration_In_Seconds DESC")           
             result_columns = ["Channel Name", "Average Video Duration In Seconds"]
-            question_answer(sql, result_columns)
+            question_answer(sql, result_columns, cursor, connection)
 
         with st.expander("10\) Which videos have the highest number of comments, and what are their corresponding channel names?"):
             sql = ("SELECT video.Video_Name, COUNT(comment.Comment_Id) AS Comment_Count, channel.Channel_Name FROM comment "
                    "RIGHT JOIN video ON comment.Video_Id = video.Video_Id INNER JOIN playlist ON video.Playlist_Id = playlist.Playlist_Id "
                    "INNER JOIN channel ON playlist.Channel_Id = channel.Channel_Id GROUP BY video.Video_Name, channel.Channel_Name ORDER BY Comment_Count DESC")
             result_columns = ["Video Name", "Comment Count", "Channel Name"]
-            question_answer(sql, result_columns)
+            question_answer(sql, result_columns, cursor, connection)
