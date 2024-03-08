@@ -1,12 +1,12 @@
 # YouTube Data Harvesting and Warehousing Using SQL MongoDB And Streamlit
 Building a simple user friendly UI with Streamlit, retrieving data from the YouTube API, storing it in a MongoDB data lake, migrating it to a SQL data warehouse, querying the data warehouse with SQL, and displaying the data in the Streamlit app.
 
-# Pre-Requisite
+## Pre-Requisite
 1) Python: Install Python
 2) MySQL: Install MySQL database server and client on your system.
 3) MongoDB: Install MongoDB on your system.
 
-# Installation
+## Installation
 1) Clone the repo and create and activate the environment for the project.
 2) Install all required packages from requirements.txt file using command: "pip install -r requirements.txt"
 
