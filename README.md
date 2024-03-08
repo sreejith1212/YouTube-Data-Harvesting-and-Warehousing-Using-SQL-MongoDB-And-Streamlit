@@ -7,7 +7,7 @@ Building a simple user friendly UI with Streamlit, retrieving data from the YouT
 3) MongoDB: Install MongoDB on your system.
 
 ## Installation
-1) Clone the repo and create and activate the environment for the project.
+1) Clone the repo, create and activate the environment for the project.
 2) Install all required packages from requirements.txt file using command: "pip install -r requirements.txt"
 
 ## Usage
@@ -19,7 +19,8 @@ Building a simple user friendly UI with Streamlit, retrieving data from the YouT
 
 ## Features
 1) Setting up Streamlit app: Using Streamlit application to create a simple UI where users can enter a YouTube channel ID, view the channel details, save the channel data to MongoDB, select and migrate channel data from MongoDB to the Mysql Database. Also we can display the SQL query results in the Streamlit app to get more insights on the data collected.
-2) Connect to the YouTube API: YouTube API to retrieve channel, video and comment data. We can use the Google API client library for Python to make requests to the API.
+2) Connect to the YouTube API: Using YouTube API to retrieve channel, video and comment data. We can use the Google API client library for Python to make requests to the API.
 3) Store data in a MongoDB data lake: Retrieved data from the YouTube API is stored in the MongoDB data lake. MongoDB is a great choice for a data lake because it can handle unstructured and semi-structured data easily. Using "pymongo"(Python driver for MongoDB) to interact with MongoDB database.
-4) Migrate data to a SQL data warehouse: Collected data for multiple channels can be migrated from MongoDB to a SQL data warehouse. Using SQL database MySQL for this.
-5) Query the SQL data warehouse: Using SQL queries to join the tables in the SQL data warehouse and retrieve data for solving some general questions. Using Python SQL library  "pymysql" to interact with the SQL database.
+4) Preprocessing Data: Using Pandas to preprocess the data before storing it to the SQL Database. Also to preprocess the SQL database queried results, before displaying it on the streamlit UI.
+5) Migrate data to a SQL data warehouse: Collected data for multiple channels can be migrated from MongoDB to a SQL data warehouse. Using MySQL database for this. Using Python SQL library  "pymysql" to interact with the SQL database.
+6) Query the SQL data warehouse: Using SQL queries to join the tables in the SQL data warehouse and retrieve data for solving some general questions.
