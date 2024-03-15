@@ -18,7 +18,7 @@ Building a simple user friendly UI with Streamlit, retrieving data from the YouT
 5) Get general insights about the migrated channel data in the "Q & A" section.
 
 ## Features
-1) Setting up Streamlit app: Using Streamlit application to create a simple UI where users can enter a YouTube channel ID, view the channel details, save the channel data to MongoDB, select and migrate channel data from MongoDB to the Mysql Database. Also we can display the SQL query results in the Streamlit app to get more insights on the data collected.
+1) Setting up Streamlit app: Using Streamlit application to create a simple UI where users can enter a YouTube channel ID, view the channel details, save the channel data to MongoDB, select and migrate channel data from MongoDB to the Mysql Database. Also we can display the SQL query results in the Streamlit app to get more insights on the data collected. Also we can use Streamlit's data visualization features to create charts and graphs to help users analyze the data.
 2) Connect to the YouTube API: Using YouTube API to retrieve channel, video and comment data. We can use the Google API client library for Python to make requests to the API.
 3) Store data in a MongoDB data lake: Retrieved data from the YouTube API is stored in the MongoDB data lake. MongoDB is a great choice for a data lake because it can handle unstructured and semi-structured data easily. Using "pymongo"(Python driver for MongoDB) to interact with MongoDB database.
 4) Preprocessing Data: Using Pandas to preprocess the data before storing it to the SQL Database. Also used Pandas to preprocess the SQL database queried results, before displaying it on the streamlit UI.

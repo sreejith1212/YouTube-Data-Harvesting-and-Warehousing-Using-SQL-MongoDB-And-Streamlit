@@ -5,13 +5,15 @@ import pandas as pd
 from collections import OrderedDict
 from pymongo import MongoClient
 import pymysql
+import plotly.express as px
 
-# Generated API Key for youtube channel data scrapping
-api_key = "AIzaSyDqHoJ-feja59SSn0ja1M2AOf23dK0vXbM"
-youtube = build('youtube', 'v3', developerKey=api_key)
+# create an api client
+def create_api_client(api_key):
+    youtube = build('youtube', 'v3', developerKey=api_key)
+    return youtube
 
 # to retrieve channel info from youtube
-def channel_info(channel_id):
+def channel_info(youtube, channel_id):
 
     request = youtube.channels().list(part = "snippet,contentDetails,statistics", id = channel_id)
     response = request.execute()
@@ -30,7 +32,7 @@ def channel_info(channel_id):
     return channel
 
 # to retrieve video ids of the channel
-def video_id_info(playlist_id):
+def video_id_info(youtube, playlist_id):
 
     page_token = None
     video_ids = []
@@ -48,7 +50,7 @@ def video_id_info(playlist_id):
     return video_ids
 
 # to retrieve video info
-def video_info(video_id):
+def videos_info(youtube, video_id):
 
     request = youtube.videos().list(part = "snippet, contentDetails,statistics", id = video_id)
     response = request.execute()
@@ -97,7 +99,7 @@ def video_info(video_id):
     return video_info
 
 # to retrieve comment info of the video
-def comment_info(video_id):
+def comments_info(youtube, video_id):
 
     page_token = None
     all_comments_info_list = []
@@ -137,17 +139,17 @@ def comment_info(video_id):
     return all_comments_data
 
 # to combine channel info, video info, comment info of a channel
-def combine_channel_info(channel_id):
+def combine_channel_info(youtube, channel_id):
 
     channel_combine_data = {}
-    channel_data = channel_info(channel_id)
+    channel_data = channel_info(youtube, channel_id)
     channel_combine_data["Channel_Info"] = channel_data
     playlist_id = channel_data["Playlist_Id"]
-    channel_video_ids = video_id_info(playlist_id)
+    channel_video_ids = video_id_info(youtube, playlist_id)
     channel_videos = {}
     for i in range(len(channel_video_ids)):
-        video_data = video_info(channel_video_ids[i])
-        channel_comments = comment_info(channel_video_ids[i])
+        video_data = videos_info(youtube, channel_video_ids[i])
+        channel_comments = comments_info(youtube, channel_video_ids[i])
         channel_videos["video_{}".format(i)] = video_data
         channel_videos["video_{}".format(i)]["Comments"] = channel_comments
     channel_combine_data["Video_Info"] = channel_videos
@@ -316,9 +318,14 @@ def question_answer(sql, result_columns, cursor, connection):
     result_df['Index'] = range(1, len(result_df) + 1)
     result_df.set_index('Index', inplace=True)
     st.dataframe(result_df, width=800)
-
+    return result_df
 
 if __name__ == "__main__":
+
+    # Generated API Key for youtube channel data scrapping
+    api_key = "AIzaSyDqHoJ-feja59SSn0ja1M2AOf23dK0vXbM"
+
+    youtube = create_api_client(api_key)
 
     # connect to mongoDB database    
     client = MongoClient("mongodb://localhost:27017")
@@ -352,7 +359,7 @@ if __name__ == "__main__":
     with st.sidebar:        
         page = option_menu(
                             menu_title='YouTube',
-                            options=['Data Collection And Migration','Q & A'],
+                            options=['Home', 'Data Collection And Migration', 'Q & A'],
                             icons=['person-circle','trophy-fill'],
                             default_index=1 ,
                             styles={"container": {"padding": "5!important"},
@@ -361,6 +368,16 @@ if __name__ == "__main__":
                                     "nav-link-selected": {"background-color": "grey"},}  
                         )
    
+    if page == "Home":
+
+        st.header(':green[YouTube Data Harvesting and Warehousing using MongoDB, SQL and Streamlit] :scroll:')
+        st.write("")
+        st.subheader(":orange[Application Properties :]")
+        st.subheader(":one: :grey[_Utilizes the Google API to extract information from any YouTube channel_.]")
+        st.subheader(":two: :grey[_Stores the retrieved channel data into MongoDB data lake_.]")
+        st.subheader(":three: :grey[_Migrates the channel data from mongoDB to a SQL data warehouse_.]")
+        st.subheader(":four: :grey[_Querying the data from the SQL database and display meaningful insights about the channels to the user_.]")
+
     if page == "Data Collection And Migration":
 
         st.header(':green[_YouTube Data Collection and Warehousing_] :books:')
@@ -373,7 +390,7 @@ if __name__ == "__main__":
         if col4.button("Search"):
             if len(search_channel_id) != 0:         
                 # retrieve channel info from youtube
-                channel_data = channel_info(search_channel_id)
+                channel_data = channel_info(youtube, search_channel_id)
                 if len(channel_data) == 0:
                     col6.error('Invalid Channel ID, Please Input Valid Channel ID', icon="🚨")
                 else:
@@ -387,15 +404,16 @@ if __name__ == "__main__":
         if col5.button("Save to MongoDB"):
 
             if len(search_channel_id) != 0:
-                channel_data = channel_info(search_channel_id)
+                channel_data = channel_info(youtube, search_channel_id)
                 if len(channel_data) == 0:
                     col6.error('Invalid Channel ID, Please Input Valid Channel ID', icon="🚨")
                 else:
                     # retrieve complete channel data from youtube
-                    data_harvest = combine_channel_info(search_channel_id)
+                    data_harvest = combine_channel_info(youtube, search_channel_id)
                     # save channel data to mongoDB
                     channel_data_mongo_db = save_to_mongodb(search_channel_id, collection_name, data_harvest)
-                    st.write(f":violet[_Channel ID (':blue[{search_channel_id}]') data successfully saved to MongoDB_]")
+                    col_1, col_2 = st.columns(2)
+                    col_1.success(f":violet[_Channel ID (':blue[{search_channel_id}]') data successfully saved to MongoDB_]", icon="✅")
                     container = st.container(border=True)
                     container.write("Expand to view extracted data")
                     container.json(channel_data_mongo_db, expanded=False)
@@ -422,15 +440,15 @@ if __name__ == "__main__":
                 channel_info_to_sql(required_channel, connection, cursor)
                 video_info_to_sql(required_channel, connection, cursor)
                 comment_info_to_sql(required_channel, connection, cursor)
-                st.write(f":violet[_Channel (':blue[{option}]') data successfully migrated to SQL Database_]")
+                col_1, col_2 = st.columns([3,2])
+                col_1.success(f":violet[_Channel (':blue[{option}]') data successfully migrated to SQL Database_]", icon="✅")
             else:
                 col12.error('Please select a channel to migrate', icon="⚠️")
   
 
     if page == "Q & A":
         
-        st.title(":green[_General Questions On Migrated Data_] :notebook:")
-        col1,col2,col3 = st.columns([2,1,2])
+        st.header(":green[_General Questions On Migrated Data_] :notebook:")
 
         # display all questions amd the user can view the corresponding answers by exapanding each question 
 
@@ -444,7 +462,9 @@ if __name__ == "__main__":
             sql = ("SELECT channel.Channel_Name, COUNT(video.Video_Id) AS no_of_videos FROM channel INNER JOIN playlist ON channel.Channel_Id = playlist.Channel_Id "
                    "LEFT JOIN video ON playlist.Playlist_Id = video.Playlist_Id GROUP BY channel.Channel_Name ORDER BY no_of_videos DESC")
             result_columns = ["Channel Name", "Number Of Videos"]
-            question_answer(sql, result_columns, cursor, connection)
+            result_df = question_answer(sql, result_columns, cursor, connection)
+            col1,col2 = st.columns([3,2])
+            col1.bar_chart(result_df, x = "Channel Name", y = "Number Of Videos", width = 0, color ="#ffaa0088")
 
         with st.expander("3\) What are the top 10 most viewed videos and their respective channels?"):
             sql = ("SELECT video.Video_Name, video.View_Count, channel.Channel_Name FROM video INNER JOIN playlist ON video.Playlist_Id = playlist.Playlist_Id "
@@ -469,29 +489,37 @@ if __name__ == "__main__":
             result_columns = ["Video Name", "Like Count"]
             question_answer(sql, result_columns, cursor, connection)
 
-        with st.expander("7\) What is the total number of views for each channel, and what are their corresponding channel names?"):
-            sql = ("SELECT channel.Channel_Name, COALESCE(sum(video.View_Count), 0) AS Total_Views FROM video RIGHT JOIN playlist ON video.Playlist_Id = playlist.Playlist_Id "
-                   "INNER JOIN channel ON playlist.Channel_Id = channel.Channel_Id GROUP BY channel.Channel_Name ORDER BY Total_Views DESC")   
-            result_columns = ["Channel Name", "Total Views"]
-            question_answer(sql, result_columns, cursor, connection)
-
-        with st.expander("8\) What are the names of all the channels that have published videos in the year 2022?"):
+        with st.expander("7\) What are the names of all the channels that have published videos in the year 2022?"):
             sql = ("SELECT channel.Channel_Name, COUNT(video.Video_Id) AS no_of_videos_in_year_2022 FROM video INNER JOIN "
                    "playlist ON video.Playlist_id = playlist.Playlist_Id INNER JOIN channel ON playlist.Channel_Id = channel.Channel_Id "
                    "WHERE YEAR(video.PublishedAt) = 2022 GROUP BY channel.Channel_Name ORDER BY no_of_videos_in_year_2022 DESC")
             result_columns = ["Channel Name", "Number Of Videos In Year 2022"]
-            question_answer(sql, result_columns, cursor, connection)
+            result_df = question_answer(sql, result_columns, cursor, connection)
+            fig = px.pie(result_df, values="Number Of Videos In Year 2022", names="Channel Name", template="plotly_dark")
+            fig.update_traces(text=result_df["Channel Name"], textposition="outside")
+            st.plotly_chart(fig)
 
-        with st.expander("9\) What is the average duration of all videos in each channel, and what are their corresponding channel names?"):
+        with st.expander("8\) What is the average duration of all videos in each channel, and what are their corresponding channel names?"):
             sql = ("SELECT channel.Channel_Name, COALESCE(AVG(video.Duration_In_Seconds), 0) AS Average_Video_Duration_In_Seconds FROM video "
                    "RIGHT JOIN playlist ON video.Playlist_Id = playlist.Playlist_Id INNER JOIN channel ON playlist.Channel_Id = channel.Channel_Id "
                    "GROUP BY channel.Channel_Name ORDER BY Average_Video_Duration_In_Seconds DESC")           
             result_columns = ["Channel Name", "Average Video Duration In Seconds"]
             question_answer(sql, result_columns, cursor, connection)
 
-        with st.expander("10\) Which videos have the highest number of comments, and what are their corresponding channel names?"):
+
+        with st.expander("9\) Which videos have the highest number of comments, and what are their corresponding channel names?"):
             sql = ("SELECT video.Video_Name, COUNT(comment.Comment_Id) AS Comment_Count, channel.Channel_Name FROM comment "
                    "RIGHT JOIN video ON comment.Video_Id = video.Video_Id INNER JOIN playlist ON video.Playlist_Id = playlist.Playlist_Id "
                    "INNER JOIN channel ON playlist.Channel_Id = channel.Channel_Id GROUP BY video.Video_Name, channel.Channel_Name ORDER BY Comment_Count DESC")
             result_columns = ["Video Name", "Comment Count", "Channel Name"]
             question_answer(sql, result_columns, cursor, connection)
+
+
+        with st.expander("10\) What is the total number of views for each channel, and what are their corresponding channel names?"):
+            sql = ("SELECT channel.Channel_Name, COALESCE(sum(video.View_Count), 0) AS Total_Views FROM video RIGHT JOIN playlist ON video.Playlist_Id = playlist.Playlist_Id "
+                   "INNER JOIN channel ON playlist.Channel_Id = channel.Channel_Id GROUP BY channel.Channel_Name ORDER BY Total_Views DESC")   
+            result_columns = ["Channel Name", "Total Views"]
+            result_df = question_answer(sql, result_columns, cursor, connection)
+            fig = px.pie(result_df, values="Total Views", names="Channel Name", hole = 0.5, template="plotly_dark")
+            fig.update_traces(text=result_df["Channel Name"], textposition="outside")
+            st.plotly_chart(fig)
